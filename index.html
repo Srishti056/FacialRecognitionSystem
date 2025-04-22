@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facial Recognition System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+
+<body>
+  <div class="container">
+    <h1>Facial Recognition System</h1>
+
+    <div class="form-section">
+      <h2>Upload an Image</h2>
+      <form method="POST" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required />
+        <button type="submit" class="btn">Upload</button>
+      </form>
+    </div>
+
+    <div class="divider">OR</div>
+
+    <div class="form-section">
+      <h2>Capture from Webcam</h2>
+      <div class="webcam-wrapper">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <button id="capture-btn" class="btn">Capture</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+
+    // Ask for webcam access
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(() => {
+        alert("⚠️ Unable to access webcam. Make sure you're on localhost and webcam access is allowed.");
+      });
+
+    // Capture image
+    captureBtn.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append('webcam_image', blob, 'capture.jpg');
+
+        fetch('/capture', {
+          method: 'POST',
+          body: formData
+        })
+          .then(res => res.json())
+          .then(data => {
+            window.location.href = `/result?name=${encodeURIComponent(data.name)}`;
+          })
+          .catch(() => alert("❌ Failed to send captured image."));
+      }, 'image/jpeg');
+    });
+  </script>
+</body>
+
+</html>
